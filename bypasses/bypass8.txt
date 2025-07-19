@@ -1,3 +1,4 @@
+#Does not work anymore, please try another script
 function LookupFunc {
     Param ($moduleName, $functionName)
     $assem = ([AppDomain]::CurrentDomain.GetAssemblies() |
