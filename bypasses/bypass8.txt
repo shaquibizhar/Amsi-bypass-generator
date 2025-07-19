@@ -1,4 +1,4 @@
-#Does not work anymore, please try another script
+# Only works through powershell console
 function LookupFunc {
     Param ($moduleName, $functionName)
     $assem = ([AppDomain]::CurrentDomain.GetAssemblies() |
