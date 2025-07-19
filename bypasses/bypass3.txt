@@ -1,3 +1,4 @@
+#does not work anymore, please try another script
 function Get-Function
 {
     Param(
