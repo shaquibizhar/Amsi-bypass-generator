@@ -1,4 +1,4 @@
-# Only works through powershell console
+# Does not work anymore, please try another script
 $InteropServicesMarshalClass = [System.Runtime.InteropServices.Marshal]
 $exec_write = 0x00000080
 $old_permissions = 0;
@@ -81,3 +81,4 @@ while ($Amsi_Provider  -ne 0)  {
         $Amsi_Provider = $InteropServicesMarshalClass::ReadInt32($C_Amsi_AM + 36  +  ($i * $intPtrSize))
     }
 }
+
